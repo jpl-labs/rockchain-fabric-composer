@@ -1,7 +1,7 @@
 {
   "name": "rockchain-fabric",
   "version": "0.0.1",
-  "description": "omni&#39;s rockchain app as a fabric/composer network",
+  "description": "omni's rockchain app as a fabric/composer network",
   "scripts": {
     "test": "mocha --recursive"
   },
