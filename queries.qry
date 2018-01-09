@@ -6,7 +6,7 @@ query getCurrentGameRound {
 }
 
 query getWagersByRound {
-  descriptions: "Selects all wagers for a given round"
+  description: "Selects all wagers for a given round"
   statement:
     SELECT com.omni.biznet.Wager
       WHERE ((startingRoundNumber <= _$roundNumber) AND (endingRoundNumber >= _$roundNumber))

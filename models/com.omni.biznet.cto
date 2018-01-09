@@ -14,7 +14,7 @@ enum Charity {
 participant User identified by email {
   o String email
   o Charity charity
-  o Double balance default = 0
+  o Double balance default = 0.0
 }
 
 asset Wager identified by wagerId {
