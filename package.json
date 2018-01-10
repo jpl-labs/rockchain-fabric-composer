@@ -3,6 +3,11 @@
   "version": "0.0.1",
   "description": "omni's rockchain app as a fabric/composer network",
   "scripts": {
+    "build-archive": "composer archive create -t dir -n . -a build/rockchain-fabric.bna",
+    "install-runtime": "composer runtime install --card PeerAdmin@hlfv1 --businessNetworkName rockchain-fabric",
+    "network-start": "composer network start --card PeerAdmin@hlfv1 --networkAdmin admin --networkAdminEnrollSecret adminpw --archiveFile build/rockchain-fabric.bna --file build/networkadmin.card",
+    "network-update": "composer network update -a build/rockchain-fabric.bna -c admin@rockchain-fabric",
+    "import-admin-card": "composer card import --file build/networkadmin.card",
     "test": "mocha --recursive"
   },
   "author": "Ryan Gahl",
