@@ -11,3 +11,14 @@ query getWagersByRound {
     SELECT com.omni.biznet.Wager
       WHERE ((startingRoundNumber <= _$roundNumber) AND (endingRoundNumber >= _$roundNumber))
 }
+
+query getWinnersByRound {
+  description: "Selects all winning wagers for a given round number and artist"
+  statement:
+    SELECT com.omni.biznet.Wager
+      WHERE (
+          (startingRoundNumber <= _$roundNumber)
+          AND (endingRoundNumber >= _$roundNumber)
+          AND (artist == _$artist)
+        )
+}

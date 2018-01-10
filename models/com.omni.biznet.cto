@@ -26,17 +26,17 @@ asset Wager identified by wagerId {
 }
 
 concept RoundResults {
-  --> User[] winners
+  --> Wager[] winners
   o String artist
-  o String songData
-  o Double payout
+  o String songData optional
+  o Double payout optional
 }
 
 asset GameRound identified by roundId {
   o String roundId
   o Integer roundNumber default = 1
   o Integer startingPot default = 0
-  o Boolean isCurrent default = false
+  o Boolean isCurrent default = true
   o RoundResults results optional
 }
 
