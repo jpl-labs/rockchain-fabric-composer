@@ -1,0 +1,24 @@
+query getCurrentGameRound {
+  description: "Select the current game round"
+  statement:
+    SELECT com.omni.biznet.GameRound
+      WHERE (isCurrent == true)
+}
+
+query getWagersByRound {
+  description: "Selects all wagers for a given round"
+  statement:
+    SELECT com.omni.biznet.Wager
+      WHERE ((startingRoundNumber <= _$roundNumber) AND (endingRoundNumber >= _$roundNumber))
+}
+
+query getWinnersByRound {
+  description: "Selects all winning wagers for a given round number and artist"
+  statement:
+    SELECT com.omni.biznet.Wager
+      WHERE (
+          (startingRoundNumber <= _$roundNumber)
+          AND (endingRoundNumber >= _$roundNumber)
+          AND (artist == _$artist)
+        )
+}

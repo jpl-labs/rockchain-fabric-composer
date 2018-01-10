@@ -4,16 +4,65 @@
 
 namespace com.omni.biznet
 
+enum Charity {
+  o Undefined
+  o Animals
+  o Kids
+  o Disaster
+}
+
 participant User identified by email {
   o String email
+  o Charity charity
+  o Double balance default = 0.0
 }
 
-asset SampleAsset identified by assetId {
-  o String assetId
-  o String value
+asset Wager identified by wagerId {
+  o String wagerId
+  o String artist
+  o Integer startingRoundNumber
+  o Integer endingRoundNumber
+  --> User bettor
 }
 
-transaction ChangeAssetValue {
-  o String newValue
-  --> Asset relatedAsset
+concept RoundResults {
+  --> Wager[] winners
+  o String artist
+  o String songData optional
+  o Double payout optional
+}
+
+asset GameRound identified by roundId {
+  o String roundId
+  o Integer roundNumber default = 1
+  o Integer startingPot default = 0
+  o Boolean isCurrent default = true
+  o RoundResults results optional
+}
+
+transaction RegisterUser {
+  o String email
+  o Charity charity
+}
+
+transaction MakeBet {
+  o String wagerId
+  o String artist
+  o Integer numberOfRounds
+  --> User bettor
+}
+
+transaction EndCurrentRound {
+  o String artist
+  o String songData optional
+}
+
+event BetPlaced {
+  o Integer potAtTimeOfBet
+  --> Wager wager
+  --> GameRound gameRound
+}
+
+event RoundCompleted {
+  --> GameRound round
 }
