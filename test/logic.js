@@ -14,7 +14,6 @@ const path = require('path');
 require('chai').should();
 
 const namespace = 'com.omni.biznet';
-const assetType = 'SampleAsset';
 
 describe('#' + namespace, () => {
     // In-memory card store for testing so cards are not persisted to the file system
@@ -83,42 +82,22 @@ describe('#' + namespace, () => {
         });
     });
 
-    describe('ChangeAssetValue()', () => {
-        it('should change the value property of ' + assetType + ' to newValue', () => {
+    describe('RegisterUser()', () => {
+        it('should register a new user with 1000 starting balance', () => {
             const factory = businessNetworkConnection.getBusinessNetwork().getFactory();
 
-            // Create a user participant
-            const user = factory.newResource(namespace, 'User', 'Ryan Gahl');
+            const email = 'user1';
+            const registerUserTx = factory.newTransaction(namespace, 'RegisterUser');
+            registerUserTx.email = email;
+            registerUserTx.charity = 'Undefined';
 
-            // Create the asset
-            const asset = factory.newResource(namespace, assetType, 'ASSET_001');
-            asset.value = 'old-value';
-
-            // Create a transaction to change the asset's value property
-            const changeAssetValue = factory.newTransaction(namespace, 'ChangeAssetValue');
-            changeAssetValue.relatedAsset = factory.newRelationship(namespace, assetType, asset.$identifier);
-            changeAssetValue.newValue = 'new-value';
-
-            let assetRegistry;
-
-            return businessNetworkConnection.getAssetRegistry(namespace + '.' + assetType).then(registry => {
-                assetRegistry = registry;
-                // Add the asset to the appropriate asset registry
-                return registry.add(asset);
-            }).then(() => {
-                return businessNetworkConnection.getParticipantRegistry(namespace + '.User');
-            }).then(userRegistry => {
-                // Add the user to the appropriate participant registry
-                return userRegistry.add(user);
-            }).then(() => {
-                // Submit the transaction
-                return businessNetworkConnection.submitTransaction(changeAssetValue);
-            }).then(registry => {
-                // Get the asset
-                return assetRegistry.get(asset.$identifier);
-            }).then(newAsset => {
-                // Assert that the asset has the new value property
-                newAsset.value.should.equal(changeAssetValue.newValue);
+            return Promise.all([
+              businessNetworkConnection.getParticipantRegistry(`${namespace}.User`),
+              businessNetworkConnection.submitTransaction(registerUserTx)
+            ]).then(([ userRegistry, tx ]) => {
+              return userRegistry.get(email);
+            }).then(user => {
+              user.balance.should.equal(1000);
             });
         });
     });
