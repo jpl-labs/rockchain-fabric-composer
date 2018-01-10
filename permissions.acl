@@ -1,5 +1,5 @@
 /**
- * Access control rules for tutorial-network
+ * Access control rules for rockchain-fabric
  */
 rule Default {
     description: "Allow all participants access to all resources"
