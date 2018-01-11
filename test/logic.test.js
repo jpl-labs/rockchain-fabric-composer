@@ -131,7 +131,7 @@ describe('#' + namespace, () => {
       // Install the Composer runtime for the new business network
       return adminConnection.install(businessNetworkDefinition.getName());
     }).then(() => {
-      // Start the business network and configure an network admin identity
+      // Start the business network and configure a network admin identity
       const startOptions = {
         networkAdmins: [
           {
