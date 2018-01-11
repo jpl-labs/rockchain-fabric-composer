@@ -24,6 +24,7 @@ describe('#' + namespace, () => {
 
   const getUserRegistry = () => businessNetworkConnection.getParticipantRegistry(`${namespace}.User`);
   const getWagerRegistry = () => businessNetworkConnection.getAssetRegistry(`${namespace}.Wager`);
+  const getGameRoundRegistry = () => businessNetworkConnection.getAssetRegistry(`${namespace}.GameRound`);
 
   /**
    * Registers a user and returns the new user
@@ -43,6 +44,25 @@ describe('#' + namespace, () => {
     ]).then(([ userRegistry, tx ]) => {
       return userRegistry.get(email);
     })
+  };
+
+  /**
+   * Gets the current game round for the current businessNetworkConnection
+   * (Will throw an error if no bets have been placed yet / no current round found)
+   * @return {com.omni.biznet.GameRound} the current game round
+   */
+  const getCurrentGameRound = () => {
+    return businessNetworkConnection.query('getCurrentGameRound')
+      .then(rounds => rounds[0]);
+  };
+
+  const endCurrentRound = (artist, songData) => {
+    const factory = businessNetworkConnection.getBusinessNetwork().getFactory();
+    const endRoundTx = factory.newTransaction(namespace, 'EndCurrentRound');
+    endRoundTx.artist = artist;
+    endRoundTx.songData = songData;
+
+    return businessNetworkConnection.submitTransaction(endRoundTx);
   };
 
   /**
@@ -153,9 +173,9 @@ describe('#' + namespace, () => {
         .then(user => {
           return makeBet('wager1', 'artist1', 10, user);
         }).then(wager => {
-          return businessNetworkConnection.query('getCurrentGameRound');
-        }).then(rounds => {
-          rounds[0].isCurrent.should.equal(true);
+          return getCurrentGameRound();
+        }).then(currentRound => {
+          currentRound.isCurrent.should.equal(true);
         });
     });
 
@@ -214,7 +234,7 @@ describe('#' + namespace, () => {
       return registerUser('user1')
         .then(user => {
           let promise;
-          for (let i = 0; i < 21; i++) {
+          for (let i = 0; i <= 20; i++) {
             if (promise) {
               promise = promise.then(() => makeBet(wagerAutoId(), 'artist1', 50, user));
             } else {
@@ -232,4 +252,109 @@ describe('#' + namespace, () => {
     });
   });
 
+  describe('EndCurrentRound()', () => {
+    let factory, user1, user2;
+
+    const wagerAutoId = (() => {
+      let id = 0;
+      return () => {
+        return `wager${id++}`;
+      };
+    })();
+
+    beforeEach(() => {
+      factory = businessNetworkConnection.getBusinessNetwork().getFactory();
+
+      return Promise.all([
+        registerUser('user1'),
+        registerUser('user2')
+      ]).then(([ _user1, _user2 ]) => {
+        user1 = _user1;
+        user2 = _user2;
+      }).then(() => {
+        //make the bets that will be used to test assertions below
+        return makeBet(wagerAutoId(), 'artist1', 10, user1)
+          .then(() => makeBet(wagerAutoId(), 'artist2', 10, user1))
+          .then(() => makeBet(wagerAutoId(), 'artist1', 5, user2))
+          .then(() => makeBet(wagerAutoId(), 'artist3', 10, user2));
+
+        // user1.balance == 980
+        // user2.balance == 985
+      });
+    });
+
+    it('should increase startingPot for next round if there are no winners', () => {
+      return endCurrentRound('foo')
+        .then(() => {
+          return getCurrentGameRound();
+        }).then(currentRound => {
+          currentRound.roundNumber.should.equal(2);
+          currentRound.startingPot.should.equal(4);
+        });
+    });
+
+    it('should reset startingPot to 0 for next round if there are winners', () => {
+      return endCurrentRound('artist1')
+        .then(() => {
+          return getCurrentGameRound();
+        }).then(currentRound => {
+          currentRound.roundNumber.should.equal(2);
+          currentRound.startingPot.should.equal(0);
+        });
+    });
+
+    it('should payout 2 to both winners when artist1 is on first round', () => {
+      return endCurrentRound('artist1')
+        .then(() => {
+          return getUserRegistry();
+        }).then(userRegistry => {
+          return Promise.all([
+            userRegistry.get('user1'),
+            userRegistry.get('user2')
+          ]);
+        }).then(([ _user1, _user2 ]) => {
+          _user1.balance.should.equal(982);
+          _user2.balance.should.equal(987);
+        });
+    });
+
+    it('should payout 20 to user1 when artist2 is on fifth round', () => {
+      return endCurrentRound('foo')             // round 1
+        .then(() => endCurrentRound('foo'))     // round 2
+        .then(() => endCurrentRound('foo'))     // round 3
+        .then(() => endCurrentRound('foo'))     // round 4
+        .then(() => endCurrentRound('artist2')) // round 5
+        .then(() => {
+          return getUserRegistry();
+        }).then(userRegistry => {
+          return Promise.all([
+            userRegistry.get('user1'),
+            userRegistry.get('user2')
+          ]);
+        }).then(([ _user1, _user2 ]) => {
+          _user1.balance.should.equal(1000);
+          _user2.balance.should.equal(985);
+        });
+    });
+
+    it('should payout 23 to user1 when artist1 is on sixth round', () => {
+      return endCurrentRound('foo')             // round 1
+        .then(() => endCurrentRound('foo'))     // round 2
+        .then(() => endCurrentRound('foo'))     // round 3
+        .then(() => endCurrentRound('foo'))     // round 4
+        .then(() => endCurrentRound('foo'))     // round 5
+        .then(() => endCurrentRound('artist1')) // round 6
+        .then(() => {
+          return getUserRegistry();
+        }).then(userRegistry => {
+          return Promise.all([
+            userRegistry.get('user1'),
+            userRegistry.get('user2')
+          ]);
+        }).then(([ _user1, _user2 ]) => {
+          _user1.balance.should.equal(1003);
+          _user2.balance.should.equal(985);
+        });
+    });
+  });
 });
