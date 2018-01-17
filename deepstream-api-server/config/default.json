@@ -1,0 +1,10 @@
+{
+  "biznet": {
+    "cardname": "admin@rockchain-fabric",
+    "namespace": "com.omni.biznet"
+  },
+
+  "deepstream": {
+    "host": "localhost:6020"
+  }
+}

@@ -57,6 +57,12 @@ transaction EndCurrentRound {
   o String songData optional
 }
 
+event UserRegistered {
+  o String email
+  o Charity charity
+  o Double balance
+}
+
 event BetPlaced {
   o Integer potAtTimeOfBet
   --> Wager wager

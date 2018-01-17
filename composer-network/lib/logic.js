@@ -42,6 +42,12 @@ function onRegisterUser(tx) {
   return getParticipantRegistry('com.omni.biznet.User')
     .then(function(userRegistry) {
       return userRegistry.add(newUser);
+    }).then(function() {
+      var userRegisteredEvent = factory.newEvent('com.omni.biznet', 'UserRegistered');
+      userRegisteredEvent.email = tx.email;
+      userRegisteredEvent.charity = tx.charity;
+      userRegisteredEvent.balance = tx.balance;
+      emit(userRegisteredEvent);
     });
 }
 
