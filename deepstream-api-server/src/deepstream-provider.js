@@ -38,14 +38,15 @@ const provide = async network => {
     dsUserList.setEntries(userIdentifiers)
 
     network.on('com.omni.biznet.UserRegistered', evt => {
-      const dsUser = ds.record.getRecord(`user/${evt.email}`)
+      const userId = `user/${evt.email}`
+      const dsUser = ds.record.getRecord(userId)
       dsUser.whenReady(() => {
         dsUser.set({
           email: evt.email,
           charity: evt.charity,
           balance: evt.balance
         })
-        dsUserList.addEntry(`user/${evt.email}`)
+        dsUserList.addEntry(userId)
       })
     })
   })

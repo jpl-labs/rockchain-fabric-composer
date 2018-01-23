@@ -1,0 +1,14 @@
+@import 'sass-material-colors/sass/sass-material-colors';
+
+.side-nav {
+  .logo {
+    display: block;
+    margin: auto;
+  }
+  
+  .nav-link.active {
+    .menu-item {
+      background-color: material-color('light-blue', '100');
+    }
+  }
+}
