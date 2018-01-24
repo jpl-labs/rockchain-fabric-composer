@@ -105,7 +105,7 @@ const NetworkState = types.model('NetworkState', {
   // }
 })).actions(self => ({
   registerUser(tx: RegisterUserTx) {
-
+    debugger
   }
 }))
 
