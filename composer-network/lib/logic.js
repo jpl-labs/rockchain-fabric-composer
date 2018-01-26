@@ -46,7 +46,7 @@ function onRegisterUser(tx) {
       var userRegisteredEvent = factory.newEvent('com.omni.biznet', 'UserRegistered');
       userRegisteredEvent.email = tx.email;
       userRegisteredEvent.charity = tx.charity;
-      userRegisteredEvent.balance = tx.balance;
+      userRegisteredEvent.balance = newUser.balance;
       emit(userRegisteredEvent);
     });
 }

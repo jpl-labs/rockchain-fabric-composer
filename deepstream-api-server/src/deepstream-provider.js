@@ -53,10 +53,10 @@ const provide = async network => {
 
   //now that automatic list syncing is setup, provide the API
   ds.rpc.provide('registerUser', ({ email, charity }, response) => {
-    network.registerUser({ email, charity }).then(() => {
-      response.send()
+    network.registerUser({ email, charity }).then(({ email, charity, balance }) => {
+      response.send({ email, charity, balance })
     }).catch(err => {
-      response.error(err)
+      response.error(err.message)
     })
   })
 
@@ -64,7 +64,7 @@ const provide = async network => {
     network.makeBet({ email, wagerId, artist, numberOfRounds }).then(() => {
       response.send()
     }).catch(err => {
-      response.error(err)
+      response.error(err.message)
     })
   })
 
@@ -72,7 +72,7 @@ const provide = async network => {
     network.makeBet({ artist, songData }).then(() => {
       response.send()
     }).catch(err => {
-      response.error(err)
+      response.error(err.message)
     })
   })
 }
