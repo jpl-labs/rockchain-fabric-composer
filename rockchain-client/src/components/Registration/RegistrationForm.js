@@ -24,8 +24,8 @@ class RegistrationForm extends Component<RegistrationFormProps> {
   form: ?{submitForm(): void}
 
   handleSubmit = (values: RegisterUserTx, { setSubmitting }: any) => {
-    this.props.onSubmit && this.props.onSubmit(values)
     setSubmitting(false)
+    this.props.onSubmit && this.props.onSubmit(values)
   }
 
   renderForm = ({

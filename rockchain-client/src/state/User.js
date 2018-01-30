@@ -2,7 +2,8 @@
 import { types } from 'mobx-state-tree'
 import { values } from 'ramda'
 import { Charities } from './Charity'
-import { DeepstreamRecord, DeepstreamListFactory } from './DeepstreamModels'
+import { DeepstreamRecord, DeepstreamListFactory } from './util/DeepstreamModels'
+import type { DeepstreamList } from './util/DeepstreamModels'
 import type { Charity } from './Charity'
 
 export type UserType = {
@@ -11,6 +12,8 @@ export type UserType = {
   balance: number
 }
 
+export type UserListType = DeepstreamList<UserType>
+
 export const User = types.compose(
   DeepstreamRecord,
   types.model({
@@ -18,11 +21,9 @@ export const User = types.compose(
     charity: types.maybe(types.enumeration('Charity', values(Charities))),
     balance: 0.0
   })
-)
-.views(self => ({
+).views(self => ({
   get storageKey() { return `user/${self.email}` }
-}))
-.named('User')
+})).named('User')
 
 export const UserList = DeepstreamListFactory({
   model: User,

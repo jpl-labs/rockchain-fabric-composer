@@ -9,47 +9,107 @@ const {
 
 const ds = deepstream(host).login(credentials)
 
+const syncList = async ({
+  network,
+  list,
+  recordName,
+  idKey,
+  listName,
+  eventName,
+  serializeRecord,
+  mapEventToRecord
+}) => {
+
+  // await record creation to ensure all composer network changes are
+  // properly reflected in the synced deepstream network
+  await Promise.all(map(async composerRecord => {
+    const record = await serializeRecord(composerRecord)
+
+    return new Promise(resolve => {
+      const id = `${recordName}/${composerRecord[idKey]}`
+      const dsRecord = ds.record.getRecord(id)
+      dsRecord.whenReady(() => {
+        network.logger.info('DeepstreamApi::syncList', 'Record synced: ', id)
+        dsRecord.set(record, resolve)
+      })
+    })
+  }, list))
+
+  const dsList = ds.record.getList(listName)
+  dsList.whenReady(() => {
+    const identifiers = map(compose(
+      concat(`${recordName}/`),
+      prop(idKey)
+    ), list)
+
+    dsList.setEntries(identifiers)
+
+    network.on(`com.omni.biznet.${eventName}`, async evt => {
+      const record = await mapEventToRecord(evt)
+      const id = `${recordName}/${record[idKey]}`
+      const dsRecord = ds.record.getRecord(id)
+      dsRecord.whenReady(() => {
+        dsRecord.set(record)
+        dsList.addEntry(id)
+        network.logger.info(`DeepstreamApi::on${eventName}`, `Added a ${recordName} to deepstream - id: ${id}`)
+      })
+    })
+  })
+}
+
 const provide = async network => {
   await network.init()
 
   //when we start up, we need to sync up the deepstream participant and asset lists
   //with the corresponding rockchain/composer lists, and then start watching for changes
-  const networkUsers = await network.listUsers()
-  await Promise.all(map(user => {
-    return new Promise(resolve => {
-      const dsUser = ds.record.getRecord(`user/${user.email}`)
-      dsUser.whenReady(() => {
-        dsUser.set({
-          email: user.email,
-          charity: user.charity,
-          balance: user.balance
-        }, resolve)
-      })
+  const [users, wagers] = await Promise.all([
+    network.listUsers(),
+    network.listWagers()
+  ])
+
+  await Promise.all([
+    syncList({
+      network,
+      list: users,
+      recordName: 'user',
+      idKey: 'email',
+      listName: 'users',
+      eventName: 'UserRegistered',
+      serializeRecord: async ({ email, charity, balance }) => ({ email, charity, balance }),
+      mapEventToRecord: async ({ email, charity, balance }) => ({ email, charity, balance })
+    }),
+    syncList({
+      network,
+      list: wagers,
+      recordName: 'wager',
+      idKey: 'wagerId',
+      listName: 'wagers',
+      eventName: 'BetPlaced',
+      serializeRecord: async ({
+        wagerId,
+        artist,
+        startingRoundNumber,
+        endingRoundNumber,
+        bettor: { $identifier: bettor }
+      }) => ({
+        wagerId,
+        artist,
+        startingRoundNumber,
+        endingRoundNumber,
+        bettor
+      }),
+      mapEventToRecord: async ({ wager: { $identifier: wagerId } }) => {
+        const resolvedWager = await network.wagerRegistry.get(wagerId)
+        return {
+          wagerId: resolvedWager.wagerId,
+          artist: resolvedWager.artist,
+          startingRoundNumber: resolvedWager.startingRoundNumber,
+          endingRoundNumber: resolvedWager.endingRoundNumber,
+          bettor: resolvedWager.bettor.$identifier
+        }
+      }
     })
-  }, networkUsers))
-
-  const dsUserList = ds.record.getList('users')
-  dsUserList.whenReady(() => {
-    const userIdentifiers = map(compose(
-      concat('user/'),
-      prop('email')
-    ), networkUsers)
-
-    dsUserList.setEntries(userIdentifiers)
-
-    network.on('com.omni.biznet.UserRegistered', evt => {
-      const userId = `user/${evt.email}`
-      const dsUser = ds.record.getRecord(userId)
-      dsUser.whenReady(() => {
-        dsUser.set({
-          email: evt.email,
-          charity: evt.charity,
-          balance: evt.balance
-        })
-        dsUserList.addEntry(userId)
-      })
-    })
-  })
+  ])
 
   //now that automatic list syncing is setup, provide the API
   ds.rpc.provide('registerUser', ({ email, charity }, response) => {
@@ -69,8 +129,20 @@ const provide = async network => {
   })
 
   ds.rpc.provide('endCurrentRound', ({ artist, songData }, response) => {
-    network.makeBet({ artist, songData }).then(() => {
-      response.send()
+    network.makeBet({ artist, songData }).then(({
+      wagerId,
+      artist,
+      startingRoundNumber,
+      endingRoundNumber,
+      bettor
+    }) => {
+      response.send({
+        wagerId,
+        artist,
+        startingRoundNumber,
+        endingRoundNumber,
+        bettor
+      })
     }).catch(err => {
       response.error(err.message)
     })

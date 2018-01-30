@@ -1,8 +1,10 @@
 // @flow
 import { types } from 'mobx-state-tree'
-import autoId from './autoId'
-import { DeepstreamRecord, DeepstreamListFactory } from './DeepstreamModels'
+import { autoId } from './util'
+import { DeepstreamRecord, DeepstreamListFactory } from './util/DeepstreamModels'
+import { DeepstreamList } from './util/DeepstreamModels'
 import { User } from './User'
+import type { WagerType } from './Wager'
 
 export type RoundResultsType = {
   winners: WagerType[],
@@ -18,6 +20,8 @@ export type GameRoundType = {
   isCurrent: boolean,
   results: ?RoundResultsType
 }
+
+export type GameRoundListType = DeepstreamList<GameRoundType>
 
 export const RoundResults = types.model('RoundResults', {
   winners: types.optional(types.array(types.reference(User)), []),
@@ -35,11 +39,9 @@ export const GameRound = types.compose(
     isCurrent: true,
     results: types.maybe(RoundResults)
   })
-)
-.views(self => ({
+).views(self => ({
   get storageKey() { return self.roundId }
-}))
-.named('GameRound')
+})).named('GameRound')
 
 export const GameRoundList = DeepstreamListFactory({
   model: GameRound,

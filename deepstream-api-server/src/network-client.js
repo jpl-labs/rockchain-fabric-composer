@@ -20,6 +20,7 @@ class RockchainNetwork extends EventEmitter {
   async init() {
     this.network = await this.connection.connect(cardname)
     this.factory = this.network.getFactory()
+    this.serializer = this.network.getSerializer()
     this.logger.info('RockchainNetwork::init', 'network definition successfully acquired - id:', this.network.getIdentifier())
 
     // get all needed registries

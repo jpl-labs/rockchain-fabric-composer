@@ -1,6 +1,7 @@
 // @flow
-import React from 'react'
-import { Switch, Route } from 'react-router-dom'
+import React, { Component } from 'react'
+import { inject, observer } from 'mobx-react'
+import { Switch, Route, Redirect, withRouter } from 'react-router-dom'
 import {
   AboutPage,
   BetsPage,
@@ -9,18 +10,51 @@ import {
   PlayingPage,
   StandingsPage
 } from './components'
+import type { NetworkStateType } from './state'
 
-const Routes = () => (
+const ProtectedRoute = ({ component: Component, currentUser, ...rest }) => (
+  <Route {...rest} render={props => (
+    currentUser
+    ? <Component {...props} />
+    : <Redirect to={{
+        pathname: '/',
+        state: { from: props.location }
+      }} />
+  )}/>
+)
+
+const LoginRouteHandler = ({ currentUser, location, ...rest }) => (
+  currentUser
+  ? <Redirect to={location.state.from || '/'} />
+  : <LoginPage {...rest} />
+)
+
+const StatelessRoutes = ({ currentUser }) => (
   <Switch>
     <Route path="/" exact={true} component={HomePage} />
-    <Route path="/bets" component={BetsPage} />
-    <Route path="/playing" component={PlayingPage} />
-    <Route path="/standings" component={StandingsPage} />
+    <ProtectedRoute path="/bets" component={BetsPage} currentUser={currentUser} />
+    <ProtectedRoute path="/playing" component={PlayingPage} currentUser={currentUser} />
+    <ProtectedRoute path="/standings" component={StandingsPage} currentUser={currentUser} />
     <Route path="/about" component={AboutPage} />
-    <Route path="/login" component={LoginPage} />
+    <Route path="/login" component={LoginRouteHandler} />
     {/* catch-all redirect to homepage for all other routes */}
     <Route component={HomePage} />
   </Switch>
 )
+
+type RoutesProps = {
+  networkState: NetworkStateType
+}
+
+// $FlowFixMe
+@inject('networkState')
+@withRouter
+@observer
+class Routes extends Component<RoutesProps> {
+  render() {
+    const { networkState: { currentUser }} = this.props
+    return <StatelessRoutes currentUser={currentUser} />
+  }
+}
 
 export default Routes

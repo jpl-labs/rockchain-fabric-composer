@@ -1,4 +1,6 @@
 export * from './BetList'
+export * from './BetPlacement'
+export * from './CurrentRound'
 export * from './Faq'
 export * from './Footer'
 export * from './Login'

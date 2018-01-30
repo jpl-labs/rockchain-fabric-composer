@@ -1,10 +1,15 @@
 // @flow
 import { types, flow } from 'mobx-state-tree'
 import { filter, propEq } from 'ramda'
+import uuidv4 from 'uuid/v4'
 import { User, UserList } from './User'
 import { WagerList } from './Wager'
 import { GameRoundList } from './GameRound'
-import { client } from './DeepstreamModels'
+import { client } from './util/DeepstreamModels'
+import type { Charity } from './Charity'
+import type { UserType, UserListType } from './User'
+import type { WagerType, WagerListType } from './Wager'
+import type { GameRoundType, GameRoundListType } from './GameRound'
 
 export type RegisterUserTx = {
   email: string,
@@ -12,10 +17,8 @@ export type RegisterUserTx = {
 }
 
 export type MakeBetTx = {
-  wagerId: string,
   artist: string,
-  numberOfRounds: number,
-  bettor: UserType
+  numberOfRounds: number
 }
 
 export type EndCurrentRoundTx = {
@@ -25,12 +28,14 @@ export type EndCurrentRoundTx = {
 
 export type NetworkStateType = {
   currentUser: ?UserType,
-  users: UserType[],
-  wagers: WagerType[],
-  gameRounds: GameRoundType[],
+  users: UserListType,
+  wagers: WagerListType,
+  gameRounds: GameRoundListType,
   wagersByUser(email: string): WagerType[],
   wagersByCharity(charity: Charity): WagerType[],
-  registerUser(tx: RegisterUserTx): void
+  registerUser(tx: RegisterUserTx): void,
+  setCurrentUser(user: UserType): void,
+  makeBet(tx: MakeBetTx): void
 }
 
 const NetworkState = types.model('NetworkState', {
@@ -38,7 +43,7 @@ const NetworkState = types.model('NetworkState', {
   users: types.optional(UserList, {}),
   wagers: types.optional(WagerList, {}),
   gameRounds: types.optional(GameRoundList, {})
-}).views(self => ({
+}).views((self: NetworkStateType) => ({
   wagersByUser(email: string) {
     return filter(propEq('bettor', email), self.wagers.records)
   },
@@ -47,7 +52,7 @@ const NetworkState = types.model('NetworkState', {
   //   return filter()
   // }
 })).actions(self => ({
-  setCurrentUser(email) {
+  setCurrentUser({ email }: UserType) {
     self.currentUser = email
   },
 
@@ -56,8 +61,24 @@ const NetworkState = types.model('NetworkState', {
       client.rpc.make('registerUser', tx, (err, result) => {
         if (err) return reject(err)
 
-        self.setCurrentUser(result.email)
-        return resolve(result)
+        self.setCurrentUser(result)
+        resolve(result)
+      })
+    })
+  }),
+
+  makeBet: flow(function*(tx: MakeBetTx) {
+    return yield new Promise((resolve, reject) => {
+      if (!self.currentUser) return reject('Must be logged in to make bets')
+
+      client.rpc.make('makeBet', {
+        wagerId: uuidv4(),
+        artist: tx.artist,
+        numberOfRounds: tx.numberOfRounds,
+        email: self.currentUser.email
+      }, (err, result) => {
+        if (err) return reject(err)
+        resolve(result)
       })
     })
   })

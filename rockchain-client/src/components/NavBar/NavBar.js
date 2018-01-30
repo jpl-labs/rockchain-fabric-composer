@@ -7,16 +7,17 @@ import {
   FlatButton,
   FontIcon
 } from 'material-ui'
-import type { UIStateType } from '../../state/UIState'
+import type { UIStateType, NetworkStateType } from '../../state'
 
 const MenuIcon = <FontIcon className="material-icons">menu</FontIcon>
 
 type NavBarProps = {
-  uiState: UIStateType
+  uiState: UIStateType,
+  networkState: NetworkStateType
 }
 
 // $FlowFixMe
-@inject('uiState')
+@inject('uiState', 'networkState')
 @observer
 class NavBar extends Component<NavBarProps> {
 
@@ -26,10 +27,15 @@ class NavBar extends Component<NavBarProps> {
   }
 
   render() {
+    const { networkState: { currentUser }} = this.props
+
     return (
       <Toolbar>
         <ToolbarGroup>
           <FlatButton icon={MenuIcon} onClick={this.onToggleMenu} />
+        </ToolbarGroup>
+        <ToolbarGroup>
+          {!!currentUser && currentUser.email}
         </ToolbarGroup>
       </Toolbar>
     )

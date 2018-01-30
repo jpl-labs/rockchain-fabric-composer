@@ -54,9 +54,7 @@ class Registration extends Component<RegistrationProps, RegistrationState> {
     })
   }
 
-  submitForm = () => {
-    this.form && this.form.submitForm()
-  }
+  submitForm = () => this.form && this.form.submitForm()
 
   render() {
     const { dialogOpen } = this.state

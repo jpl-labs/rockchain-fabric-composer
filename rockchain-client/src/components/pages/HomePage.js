@@ -13,23 +13,26 @@ import {
   Faq,
   BetList
 } from '../'
+import type { LoginTx } from '../Login'
 
 type StatelessHomePageProps = {
   currentUser: ?UserType,
-  onRegisterUser(tx: RegisterUserTx): void
+  onRegisterUser(tx: RegisterUserTx): void,
+  onLogin(tx: LoginTx): void
 }
 
 class StatelessHomePage extends Component<StatelessHomePageProps> {
   render() {
     const {
       currentUser,
-      onRegisterUser
+      onRegisterUser,
+      onLogin
     } = this.props
 
     return (
       <div>
         {!currentUser && <Registration onRegisterUser={onRegisterUser} />}
-        {!currentUser && <Login />}
+        {!currentUser && <Login onLogin={onLogin} />}
         {!!currentUser && <Wallet />}
         {!currentUser && <Faq />}
         <BetList />
@@ -52,6 +55,7 @@ class HomePage extends Component<HomePageProps> {
     return <StatelessHomePage
       currentUser={networkState.currentUser}
       onRegisterUser={networkState.registerUser}
+      onLogin={networkState.setCurrentUser}
     />
   }
 }

@@ -1,8 +1,9 @@
+// @flow
 import { types, applySnapshot } from 'mobx-state-tree'
 import { autorun } from 'mobx'
 import deepstream from 'deepstream.io-client-js'
 
-//TODO: externalize deepstream client config/login
+//TODO: externalize deepstream client config/login and split these models into separate files
 export const client = deepstream('localhost:6020').login()
 
 const DeepstreamRecord = types.model('DeepstreamRecord')
@@ -30,6 +31,13 @@ const DeepstreamRecord = types.model('DeepstreamRecord')
     }
   })
 
+type ListFactoryArgs = {
+  model: any,
+  idPath: string,
+  idPrefix?: string,
+  listKey: string
+}
+
 /**
  * n.b.: This only supports homogenous lists, and is intended as a simple id-based index
  *    for records of the same type
@@ -39,17 +47,17 @@ const DeepstreamRecord = types.model('DeepstreamRecord')
  * @param {string} idPrefix prefix to prepend to id, if id isn't self describing already
  * @param {string} listKey the key to use for the list in deepstream
  */
-const DeepstreamListFactory = ({ model, idPath, idPrefix = '', listKey }) => {
+const DeepstreamListFactory = ({ model, idPath, idPrefix = '', listKey }: ListFactoryArgs) => {
   if (!idPath) {
-    throw new Error('idPath property must be specified for instances of DeepStreamList.')
+    throw new Error('idPath property must be specified for instances of DeepstreamList.')
   }
   if (!listKey) {
-    throw new Error('listKey property must be specified for instances of DeepStreamList.')
+    throw new Error('listKey property must be specified for instances of DeepstreamList.')
   }
 
   const prefixRegex = new RegExp(`^${idPrefix}`)
 
-  return types.model('DeepStreamList', {
+  return types.model('DeepstreamList', {
     records: types.optional(types.map(model), {}),
     entries: types.optional(types.array(types.string), [])
   }).actions(self => {
@@ -100,6 +108,11 @@ const DeepstreamListFactory = ({ model, idPath, idPrefix = '', listKey }) => {
       }
     }
   })
+}
+
+export type DeepstreamList<T> = {
+  records: Map<string, T>,
+  entries: string[]
 }
 
 export { DeepstreamRecord, DeepstreamListFactory }
