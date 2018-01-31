@@ -35,7 +35,7 @@ class StatelessHomePage extends Component<StatelessHomePageProps> {
         {!currentUser && <Login onLogin={onLogin} />}
         {!!currentUser && <Wallet />}
         {!currentUser && <Faq />}
-        <BetList />
+        {!!currentUser && <BetList user={currentUser} />}
       </div>
     )
   }

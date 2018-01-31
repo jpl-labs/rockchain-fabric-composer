@@ -18,7 +18,7 @@ class StatelessBetsPage extends Component<StatelessBetsPageProps> {
     return (
       <div>
         {!!currentUser && <BetPlacement onMakeBet={onMakeBet} />}
-        <BetList />
+        {!!currentUser && <BetList user={currentUser} />}
         <CurrentRound />
       </div>
     )

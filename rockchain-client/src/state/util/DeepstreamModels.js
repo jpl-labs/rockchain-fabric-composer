@@ -60,7 +60,9 @@ const DeepstreamListFactory = ({ model, idPath, idPrefix = '', listKey }: ListFa
   return types.model('DeepstreamList', {
     records: types.optional(types.map(model), {}),
     entries: types.optional(types.array(types.string), [])
-  }).actions(self => {
+  }).views(self => ({
+    get values() { return self.records.values() }
+  })).actions(self => {
     let dsList, disposer
 
     return {
@@ -87,8 +89,8 @@ const DeepstreamListFactory = ({ model, idPath, idPrefix = '', listKey }: ListFa
 
       loadRecords(entries) {
         entries.forEach(entry => {
-          if (!self.records.has(entry)) {
-            const id = entry.replace(prefixRegex, '')
+          const id = entry.replace(prefixRegex, '')
+          if (!self.records.has(id)) {
             self.records.set(id, { [idPath]: id })
           }
         })
@@ -112,6 +114,7 @@ const DeepstreamListFactory = ({ model, idPath, idPrefix = '', listKey }: ListFa
 
 export type DeepstreamList<T> = {
   records: Map<string, T>,
+  values: T[],
   entries: string[]
 }
 

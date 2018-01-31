@@ -1,6 +1,6 @@
 // @flow
 import { types, flow } from 'mobx-state-tree'
-import { filter, propEq } from 'ramda'
+import { filter, propEq, pathEq } from 'ramda'
 import uuidv4 from 'uuid/v4'
 import { User, UserList } from './User'
 import { WagerList } from './Wager'
@@ -27,7 +27,7 @@ export type EndCurrentRoundTx = {
 }
 
 export type NetworkStateType = {
-  currentUser: ?UserType,
+  currentUser: ?UserType | ?string,
   users: UserListType,
   wagers: WagerListType,
   gameRounds: GameRoundListType,
@@ -45,13 +45,13 @@ const NetworkState = types.model('NetworkState', {
   gameRounds: types.optional(GameRoundList, {})
 }).views((self: NetworkStateType) => ({
   wagersByUser(email: string) {
-    return filter(propEq('bettor', email), self.wagers.records)
+    return filter(pathEq(['bettor', 'email'], email), self.wagers.values).reverse()
   },
 
-  // wagersByCharity(charity: Charity) {
-  //   return filter()
-  // }
-})).actions(self => ({
+  wagersByCharity(charity: Charity) {
+    return filter(propEq('charity', charity), self.wagers.values)
+  }
+})).actions((self: NetworkStateType) => ({
   setCurrentUser({ email }: UserType) {
     self.currentUser = email
   },
