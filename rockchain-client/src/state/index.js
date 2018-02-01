@@ -6,6 +6,7 @@ export type { SideNavStateType, UIStateType } from './UIState'
 
 export { default as NetworkState } from './NetworkState'
 export type {
+  WinningWagerType,
   RegisterUserTx,
   MakeBetTx,
   EndCurrentRoundTx,

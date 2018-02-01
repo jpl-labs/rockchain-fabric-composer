@@ -1,6 +1,21 @@
 // @flow
 import { types, flow } from 'mobx-state-tree'
-import { filter, propEq, pathEq } from 'ramda'
+import {
+  __,
+  compose,
+  map,
+  path,
+  concat,
+  gt,
+  flatten,
+  filter,
+  propEq,
+  pathEq,
+  find,
+  sortBy,
+  prop,
+  assoc
+} from 'ramda'
 import uuidv4 from 'uuid/v4'
 import { User, UserList } from './User'
 import { WagerList } from './Wager'
@@ -9,7 +24,25 @@ import { client } from './util/DeepstreamModels'
 import type { Charity } from './Charity'
 import type { UserType, UserListType } from './User'
 import type { WagerType, WagerListType } from './Wager'
-import type { GameRoundType, GameRoundListType } from './GameRound'
+import type { GameRoundType, GameRoundListType, RoundResultsType } from './GameRound'
+
+/**
+ * n.b.: Mixin helper type for winning wagers.
+ * adds the relationship to the gameRound that the wager
+ * was a winner for, and enforces non-null `results` property
+ * on the gameRound (normally can be null if the round is current)
+ *
+ * note the {| ... |} bracketing. This is an "exact type" in flow
+ * https://flow.org/en/docs/types/objects/#toc-exact-object-types
+ * and is required when using the spread (...) operator to mix types
+ */
+export type WinningWagerType = {|
+  ...WagerType,
+  gameRound: {|
+    ...GameRoundType,
+    results: RoundResultsType
+  |}
+|}
 
 export type RegisterUserTx = {
   email: string,
@@ -27,12 +60,17 @@ export type EndCurrentRoundTx = {
 }
 
 export type NetworkStateType = {
-  currentUser: ?UserType | ?string,
+  currentUser: ?UserType,
   users: UserListType,
   wagers: WagerListType,
   gameRounds: GameRoundListType,
   wagersByUser(email: string): WagerType[],
   wagersByCharity(charity: Charity): WagerType[],
+  sortedGameRounds(): GameRoundType[],
+  roundsWithWinners(): GameRoundType[],
+  winningRoundForWager(wager: WagerType): GameRoundType,
+  winningWagers(): WinningWagerType[],
+  winningWagersByUser(email: string): WinningWagerType[],
   registerUser(tx: RegisterUserTx): void,
   setCurrentUser(user: UserType): void,
   makeBet(tx: MakeBetTx): void
@@ -43,15 +81,54 @@ const NetworkState = types.model('NetworkState', {
   users: types.optional(UserList, {}),
   wagers: types.optional(WagerList, {}),
   gameRounds: types.optional(GameRoundList, {})
-}).views((self: NetworkStateType) => ({
-  wagersByUser(email: string) {
-    return filter(pathEq(['bettor', 'email'], email), self.wagers.values).reverse()
+}).views(self => ({
+  wagersByUser(email: string, wagers: ?WagerType[]) {
+    return filter(pathEq(['bettor', 'email'], email), wagers || self.wagers.values)
   },
 
   wagersByCharity(charity: Charity) {
     return filter(propEq('charity', charity), self.wagers.values)
+  },
+
+  get sortedGameRounds() {
+    return sortBy(prop('roundNumber'), self.gameRounds.values)
+  },
+
+  get roundsWithWinners() {
+    return filter(compose(
+      gt(__, 0),
+      path(['results', 'winners', 'length'])
+    ))(self.sortedGameRounds)
+  },
+
+  winningRoundForWager(wager: WagerType) {
+    const { startingRoundNumber, endingRoundNumber, artist } = wager
+
+    return find(round => {
+      return round.roundNumber >= startingRoundNumber
+        && round.roundNumber <= endingRoundNumber
+        && round.artist === artist
+    })(self.sortedGameRounds)
+  },
+
+  get winningWagers() {
+    //first pluck out the arrays of winning wagers
+    const winnerArrays = map(compose(
+      concat([]),
+      path(['results', 'winners'])
+    ))(self.roundsWithWinners)
+
+    //flatten our array of arrays into just an array of winners
+    const winners = flatten(winnerArrays)
+
+    //associate the winning gameRound with each wager and return final array
+    return map(winner => assoc('gameRound', self.winningRoundForWager(winner)), winners)
+  },
+
+  winningWagersByUser(email: string) {
+    return self.wagersByUser(email, self.winningWagers)
   }
-})).actions((self: NetworkStateType) => ({
+})).actions(self => ({
   setCurrentUser({ email }: UserType) {
     self.currentUser = email
   },

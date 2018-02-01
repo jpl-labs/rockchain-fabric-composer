@@ -1,22 +1,35 @@
 // @flow
 import React, { Component } from 'react'
 import { inject, observer } from 'mobx-react'
-import { Card, CardTitle, CardText, CardHeader } from 'material-ui'
-import { map } from 'ramda'
+import {
+  Card,
+  CardTitle,
+  CardText,
+  CardHeader,
+  FontIcon
+} from 'material-ui'
+import { map, reverse } from 'ramda'
 import type { UserType, WagerType, NetworkStateType } from '../../state'
+import './BetList.css'
 
 type WagerCardProps = {
-  wager: WagerType
+  wager: WagerType,
+  showUser: ?boolean
 }
 
+// $FlowFixMe
+@observer
 class WagerCard extends Component<WagerCardProps> {
   render() {
-    const { wager } = this.props
+    const { wager, showUser } = this.props
 
     return (
       <Card>
         <CardHeader>
-          TODO: add icon<br/>
+          <CardTitle>
+            <FontIcon className="material-icons bet-icon">queue_music</FontIcon>
+            {!!showUser && wager.bettor && <strong>{wager.bettor.email}</strong>}
+          </CardTitle>
           <CardTitle
             title={wager.artist}
             subtitle={`Rounds ${wager.startingRoundNumber} - ${wager.endingRoundNumber}`}
@@ -28,19 +41,20 @@ class WagerCard extends Component<WagerCardProps> {
 }
 
 type StatelessBetListProps = {
-  user: UserType,
-  wagers: WagerType[]
+  user: ?UserType,
+  wagers: WagerType[],
+  showUser: ?boolean
 }
 
 class StatelessBetList extends Component<StatelessBetListProps> {
   render() {
-    const { user, wagers } = this.props
+    const { user, wagers, showUser } = this.props
 
     return (
       <Card>
-        <CardTitle title={`Active bets for ${user.email}`} />
+        {!!user && <CardTitle title={`Active bets for ${user.email}`} />}
         <CardText>
-          {map(wager => <WagerCard wager={wager} key={wager.wagerId} />, wagers)}
+          {map(wager => <WagerCard wager={wager} key={wager.wagerId} showUser={showUser} />, wagers)}
         </CardText>
       </Card>
     )
@@ -48,8 +62,10 @@ class StatelessBetList extends Component<StatelessBetListProps> {
 }
 
 type BetListProps = {
-  user: UserType,
-  networkState: NetworkStateType
+  user: ?UserType,
+  networkState: NetworkStateType,
+  limit: ?number,
+  showUser: ?boolean
 }
 
 // $FlowFixMe
@@ -58,15 +74,23 @@ type BetListProps = {
 class BetList extends Component<BetListProps> {
 
   get wagers(): WagerType[] {
-    const { user, networkState } = this.props
-    return networkState.wagersByUser(user.email)
+    const { user, networkState, limit } = this.props
+    // reverse so most recent bets render at the top
+    const wagers = reverse(user ? networkState.wagersByUser(user.email) : networkState.wagers.values)
+    if (limit) {
+      return wagers.slice(0, limit)
+    }
+    return wagers
   }
 
   render() {
-    const { user } = this.props
+    const { user, showUser } = this.props
 
-    return <StatelessBetList user={user} wagers={this.wagers} />
+    return this.wagers.length
+      ? <StatelessBetList user={user} wagers={this.wagers} showUser={showUser} />
+      : <div>No wagers have been made yet!</div>
   }
 }
 
 export default BetList
+export { StatelessBetList }

@@ -47,7 +47,6 @@ type RoutesProps = {
 }
 
 // $FlowFixMe
-@inject('networkState')
 @withRouter
 @observer
 class Routes extends Component<RoutesProps> {

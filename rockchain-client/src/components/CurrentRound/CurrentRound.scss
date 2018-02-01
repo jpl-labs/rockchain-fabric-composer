@@ -1,0 +1,14 @@
+.current-round {
+  .round-pot {
+    .loading {
+      &.container {
+        position: relative;
+      }
+
+      &.indicator {
+        position: relative !important;
+        display: inline-block;
+      }
+    }
+  }
+}

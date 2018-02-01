@@ -6,13 +6,13 @@ import type { DeepstreamList } from './util/DeepstreamModels'
 import { User } from './User'
 import type { UserType } from './User'
 
-export type WagerType = {
+export type WagerType = {|
   wagerId: string,
   artist: string,
   startingRoundNumber: number,
   endingRoundNumber: number,
   bettor: UserType
-}
+|}
 
 export type WagerListType = DeepstreamList<WagerType>
 

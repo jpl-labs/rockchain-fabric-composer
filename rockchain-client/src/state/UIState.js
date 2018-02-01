@@ -14,7 +14,7 @@ const SideNavState = types.model({
   isOpen: false
 }).actions(self => ({
   toggleOpen(open?: boolean) {
-    self.isOpen = typeof open !== 'undefined' ? !!open : !self.isOpen
+    self.isOpen = typeof open === 'boolean' ? open : !self.isOpen
   }
 }))
 

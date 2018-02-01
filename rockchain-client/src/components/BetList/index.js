@@ -1,1 +1,1 @@
-export { default as BetList } from './BetList'
+export { default as BetList, StatelessBetList } from './BetList'

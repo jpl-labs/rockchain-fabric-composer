@@ -42,7 +42,7 @@ class App extends Component<{}> {
             <SideNav />
             <NavBar />
             <div className="app-body">
-              <Routes />
+              <Routes networkState={networkState} />
             </div>
             <Footer />
           </div>

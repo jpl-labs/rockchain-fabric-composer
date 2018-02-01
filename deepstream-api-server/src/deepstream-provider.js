@@ -41,7 +41,7 @@ const syncList = async ({
       concat(`${recordName}/`),
       prop(idKey)
     ), list)
-
+    
     dsList.setEntries(identifiers)
 
     network.on(`com.omni.biznet.${eventName}`, async evt => {

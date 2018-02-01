@@ -2,7 +2,7 @@
 import { types } from 'mobx-state-tree'
 import { autoId } from './util'
 import { DeepstreamRecord, DeepstreamListFactory } from './util/DeepstreamModels'
-import { DeepstreamList } from './util/DeepstreamModels'
+import type { DeepstreamList } from './util/DeepstreamModels'
 import { User } from './User'
 import type { WagerType } from './Wager'
 
@@ -13,13 +13,13 @@ export type RoundResultsType = {
   payout: ?number
 }
 
-export type GameRoundType = {
+export type GameRoundType = {|
   roundId: string,
   roundNumber: number,
   startingPot: number,
   isCurrent: boolean,
   results: ?RoundResultsType
-}
+|}
 
 export type GameRoundListType = DeepstreamList<GameRoundType>
 
