@@ -9,7 +9,6 @@ export type {
   WinningWagerType,
   RegisterUserTx,
   MakeBetTx,
-  EndCurrentRoundTx,
   NetworkStateType
 } from './NetworkState'
 

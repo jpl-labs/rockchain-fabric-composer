@@ -5,6 +5,7 @@ import {
   compose,
   map,
   path,
+  pathOr,
   concat,
   gt,
   flatten,
@@ -54,22 +55,18 @@ export type MakeBetTx = {
   numberOfRounds: number
 }
 
-export type EndCurrentRoundTx = {
-  artist: string,
-  songData: ?string
-}
-
 export type NetworkStateType = {
   currentUser: ?UserType,
   users: UserListType,
   wagers: WagerListType,
   gameRounds: GameRoundListType,
+  sortedGameRounds: GameRoundType[],
+  roundsWithWinners: GameRoundType[],
+  winningWagers: WinningWagerType[],
+  currentRound: ?GameRoundType,
   wagersByUser(email: string): WagerType[],
   wagersByCharity(charity: Charity): WagerType[],
-  sortedGameRounds(): GameRoundType[],
-  roundsWithWinners(): GameRoundType[],
   winningRoundForWager(wager: WagerType): GameRoundType,
-  winningWagers(): WinningWagerType[],
   winningWagersByUser(email: string): WinningWagerType[],
   registerUser(tx: RegisterUserTx): void,
   setCurrentUser(user: UserType): void,
@@ -94,10 +91,14 @@ const NetworkState = types.model('NetworkState', {
     return sortBy(prop('roundNumber'), self.gameRounds.values)
   },
 
+  get currentRound() {
+    return find(propEq('isCurrent', true), self.gameRounds.values)
+  },
+
   get roundsWithWinners() {
     return filter(compose(
       gt(__, 0),
-      path(['results', 'winners', 'length'])
+      pathOr(['results', 'winners', 'length'], 0)
     ))(self.sortedGameRounds)
   },
 
@@ -115,8 +116,10 @@ const NetworkState = types.model('NetworkState', {
     //first pluck out the arrays of winning wagers
     const winnerArrays = map(compose(
       concat([]),
-      path(['results', 'winners'])
+      pathOr(['results', 'winners'], null)
     ))(self.roundsWithWinners)
+
+    if (winnerArrays.length === 0) return []
 
     //flatten our array of arrays into just an array of winners
     const winners = flatten(winnerArrays)

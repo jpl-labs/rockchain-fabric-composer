@@ -180,6 +180,7 @@ function onEndCurrentRound(tx) {
         .then(function() {
           var roundCompletedEvent = factory.newEvent('com.omni.biznet', 'RoundCompleted');
           roundCompletedEvent.round = currentRound;
+          roundCompletedEvent.newRound = nextRound;
           emit(roundCompletedEvent);
         });
     });

@@ -71,4 +71,5 @@ event BetPlaced {
 
 event RoundCompleted {
   --> GameRound round
+  --> GameRound newRound
 }

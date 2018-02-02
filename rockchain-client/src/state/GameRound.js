@@ -4,6 +4,7 @@ import { autoId } from './util'
 import { DeepstreamRecord, DeepstreamListFactory } from './util/DeepstreamModels'
 import type { DeepstreamList } from './util/DeepstreamModels'
 import { User } from './User'
+import { Wager } from './Wager'
 import type { WagerType } from './Wager'
 
 export type RoundResultsType = {
@@ -24,7 +25,7 @@ export type GameRoundType = {|
 export type GameRoundListType = DeepstreamList<GameRoundType>
 
 export const RoundResults = types.model('RoundResults', {
-  winners: types.optional(types.array(types.reference(User)), []),
+  winners: types.optional(types.array(types.reference(Wager)), []),
   artist: types.string,
   songData: types.maybe(types.string),
   payout: types.maybe(types.number)
@@ -40,11 +41,12 @@ export const GameRound = types.compose(
     results: types.maybe(RoundResults)
   })
 ).views(self => ({
-  get storageKey() { return self.roundId }
+  get storageKey() { return `gameRound/${self.roundId}` }
 })).named('GameRound')
 
 export const GameRoundList = DeepstreamListFactory({
   model: GameRound,
   idPath: 'roundId',
+  idPrefix: 'gameRound/',
   listKey: 'gameRounds'
 })
